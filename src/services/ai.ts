@@ -6,7 +6,6 @@ export function createChatSession() {
       let text = '';
       let imageUrl = '';
       
-      // Handle message format from frontend code
       if (Array.isArray(input.message)) {
         text = input.message.find(p => p.text)?.text || '';
         const imgPart = input.message.find(p => p.inlineData);
@@ -25,7 +24,7 @@ export function createChatSession() {
           body: JSON.stringify({ history, message: text, imageUrl })
         });
       } catch (netErr: any) {
-        throw new Error("Не удалось подключиться к серверу. Проверьте соединение с интернетом.");
+        throw new Error("Не удалось подключиться к серверу. Проверьте интернет-соединение.");
       }
 
       const contentType = response.headers.get("content-type") || "";
@@ -33,7 +32,7 @@ export function createChatSession() {
       if (!contentType.includes("application/json")) {
         const raw = await response.text().catch(() => "");
         if (response.status === 404 || raw.includes("<!DOCTYPE") || raw.includes("<html")) {
-          throw new Error("Серверный API недоступен на Vercel. Убедитесь, что перемнная GEMINI_API_KEY добавлена в Environment Variables в Vercel.");
+          throw new Error("API не найден. Убедитесь, что перемнная GEMINI_API_KEY добавлена в Environment Variables в Vercel.");
         }
         throw new Error(`Ошибка сервера (${response.status}): ${raw.slice(0, 100)}`);
       }
@@ -41,10 +40,10 @@ export function createChatSession() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `Ошибка при запросе к серверу (код ${response.status})`);
+        throw new Error(data.error || `Ошибка запроса к серверу (код ${response.status})`);
       }
       
-      // Update local history proxy
+      // Update local history
       history.push({ role: 'user', content: text });
       history.push({ role: 'model', content: data.text });
       
