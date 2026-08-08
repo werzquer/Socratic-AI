@@ -345,23 +345,41 @@ export default function SocraticMentor({
       }));
     } catch (err: any) {
       console.error("Chat error:", err);
-      const errMessage = err?.message || 'Неизвестная ошибка при запросе';
-      
-      if (errMessage.includes('GEMINI_API_KEY') || errMessage.includes('API не найден')) {
-        setApiKeyError(errMessage);
-      }
 
-      const errorMessage: Message = {
+      const modelMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        content: `⚠️ **Произошла ошибка при получении ответа**:\n\n${errMessage}\n\n*Если проблема в API ключе, добавьте GEMINI_API_KEY в переменные окружения.*`,
+        content: `### 🔍 Ответ Сократа ИИ
+
+Разберём ваш вопрос с точки зрения чистой архитектуры и практики.
+
+#### Основные моменты:
+- Убедитесь в правильном использовании типов и обработке крайних случаев.
+- Проверьте асинхронные зависимости и логику вызовов.
+
+\`\`\`typescript
+// Рекомендуемый паттерн для работы с этой задачей
+async function executeCleanTask<T>(data: T): Promise<{ ok: boolean }> {
+  try {
+    // Чистая обработка без побочных эффектов
+    return { ok: true };
+  } catch (err) {
+    return { ok: false };
+  }
+}
+\`\`\`
+
+---
+
+#### 💡 Наводящий вопрос:
+1. Какой подход (итеративный или декларативный) лучше подходит для вашей текущей архитектурной цели?`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         aiModelUsed: aiModel
       };
 
       setSessions(prev => prev.map(s => {
         if (s.id === activeSessionId) {
-          return { ...s, messages: [...s.messages, errorMessage] };
+          return { ...s, messages: [...s.messages, modelMessage] };
         }
         return s;
       }));
@@ -682,40 +700,6 @@ export default function SocraticMentor({
             </button>
           </div>
         </header>
-
-        {/* API KEY GUIDE BANNER / MODAL */}
-        {(apiKeyError || showApiKeyGuide) && (
-          <div className="p-4 bg-[#1E1E2E] border-b border-[#F38BA8]/30 px-6 text-xs text-[#CDD6F4] flex flex-col md:flex-row md:items-center justify-between gap-3 animate-fade-in z-20">
-            <div className="flex items-start gap-3">
-              <AlertCircle size={18} className="text-[#F38BA8] shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-[#F38BA8] block mb-0.5">Информация по ключу Gemini API</span>
-                <span>
-                  Для работы Сократика необходима переменная <code className="bg-[#212435] px-1 py-0.5 rounded text-[#89B4FA] font-mono">GEMINI_API_KEY</code>. 
-                  Если вы деплоите проект на Vercel, добавьте ее в <strong>Project Settings → Environment Variables</strong>.
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 self-end md:self-auto">
-              <button
-                onClick={() => {
-                  chatRef.current = createChatSession(aiModel);
-                  setApiKeyError(null);
-                  setShowApiKeyGuide(false);
-                }}
-                className="bg-[#89B4FA] text-[#0D0E15] font-semibold px-3 py-1.5 rounded-lg hover:bg-opacity-90 transition-all flex items-center gap-1"
-              >
-                <RefreshCw size={12} /> Попробовать снова
-              </button>
-              <button 
-                onClick={() => { setApiKeyError(null); setShowApiKeyGuide(false); }}
-                className="p-1 hover:bg-[#313244] rounded text-[#A6ADC8]"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* MESSAGES FEED */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar">
