@@ -11,8 +11,13 @@ const SYSTEM_PROMPT = `Ты — Socratic AI, интеллектуальный м
 3. АНАЛИЗ ОШИБОК: При проверке кода пользователя всегда указывай на логические ошибки, проблемы с безопасностью или неэффективные алгоритмы. Объясняй *почему* это ошибка, а не просто *что* исправить.
 4. ИНТЕРФЕЙС: Ты поддерживаешь работу со встроенным редактором кода (Monaco Editor). Если ты предлагаешь изменения, оформляй их в блоки кода с указанием языка.`;
 
-function getAiClient(): GoogleGenAI {
-  const key = process.env.GEMINI_API_KEY;
+function getAiClient(req?: any, body?: any): GoogleGenAI {
+  const key = body?.customApiKey ||
+              req?.headers?.['x-gemini-key'] ||
+              (typeof req?.headers?.authorization === 'string' ? req.headers.authorization.replace('Bearer ', '') : null) ||
+              process.env.GEMINI_API_KEY ||
+              process.env.API_KEY ||
+              process.env.VITE_GEMINI_API_KEY;
   if (!key) {
     throw new Error('GEMINI_API_KEY_MISSING');
   }
@@ -47,7 +52,7 @@ export default async function handler(req: any, res: any) {
 
     const prompt = `Пользователь пытается запустить код на ${language}:\n\n\`\`\`${language}\n${code}\n\`\`\`\n\nРезультат выполнения / Ошибка:\n${output}\n\nСделай аудит этого кода. Найди ошибку и задай 1-2 наводящих вопроса по методу Сократа.`;
 
-    const client = getAiClient();
+    const client = getAiClient(req, body);
 
     let textResult = '';
     const modelsToTry = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-1.5-flash"];

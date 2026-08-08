@@ -11,8 +11,13 @@ const BASE_SYSTEM_PROMPT = `Ты — Socratic AI, интеллектуальны
    - Избегай кривых конструкций вроде "| $2^7$" — форматируй таблицы и выражения чётко.
 4. ЛАКОНИЧНОСТЬ И СКОРОСТЬ: Пиши по существу, без мусорных вводных фраз. Излагай суть сразу.`;
 
-function getAiClient(): GoogleGenAI {
-  const key = process.env.GEMINI_API_KEY;
+function getAiClient(req?: any, body?: any): GoogleGenAI {
+  const key = body?.customApiKey ||
+              req?.headers?.['x-gemini-key'] ||
+              (typeof req?.headers?.authorization === 'string' ? req.headers.authorization.replace('Bearer ', '') : null) ||
+              process.env.GEMINI_API_KEY ||
+              process.env.API_KEY ||
+              process.env.VITE_GEMINI_API_KEY;
   if (!key) {
     throw new Error('GEMINI_API_KEY_MISSING');
   }
@@ -83,7 +88,7 @@ export default async function handler(req: any, res: any) {
       parts: currentParts
     });
 
-    const client = getAiClient();
+    const client = getAiClient(req, body);
 
     // Adjust system prompt and target models depending on selected AI model mode
     let systemInstruction = BASE_SYSTEM_PROMPT;

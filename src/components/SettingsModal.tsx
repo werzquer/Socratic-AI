@@ -28,6 +28,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClearHistory,
   hasApiKey
 }) => {
+  const [customKey, setCustomKey] = React.useState<string>(() => {
+    try {
+      return localStorage.getItem('socratic_custom_api_key') || '';
+    } catch (e) {
+      return '';
+    }
+  });
+  const [showKeyInput, setShowKeyInput] = React.useState(false);
+
+  const handleSaveKey = (val: string) => {
+    setCustomKey(val);
+    try {
+      if (val.trim()) {
+        localStorage.setItem('socratic_custom_api_key', val.trim());
+      } else {
+        localStorage.removeItem('socratic_custom_api_key');
+      }
+    } catch (e) {
+      console.error("Failed to set key:", e);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -193,17 +215,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               Состояние системы и данных
             </label>
 
-            <div className="p-3.5 rounded-2xl bg-[#11111B] border border-[#212435] flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2.5">
-                <Key size={16} className="text-[#89B4FA]" />
-                <div>
-                  <div className="font-semibold text-white">Gemini API Key</div>
-                  <div className="text-[11px] text-[#A6ADC8]">Интегрирован через серверный прокси</div>
+            <div className="p-3.5 rounded-2xl bg-[#11111B] border border-[#212435] text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Key size={16} className="text-[#89B4FA]" />
+                  <div>
+                    <div className="font-semibold text-white">Gemini API Key</div>
+                    <div className="text-[11px] text-[#A6ADC8]">
+                      {customKey ? 'Используется пользовательский ключ' : 'Интегрирован через серверный прокси'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowKeyInput(!showKeyInput)}
+                    className="text-[11px] text-[#89B4FA] hover:underline"
+                  >
+                    {showKeyInput ? 'Скрыть' : (customKey ? 'Изменить' : 'Свой ключ')}
+                  </button>
+                  <span className="flex items-center gap-1 text-[11px] text-[#A6E3A1] font-mono font-medium bg-[#A6E3A1]/10 px-2.5 py-1 rounded-full border border-[#A6E3A1]/20">
+                    <ShieldCheck size={12} /> Активен
+                  </span>
                 </div>
               </div>
-              <span className="flex items-center gap-1 text-[11px] text-[#A6E3A1] font-mono font-medium bg-[#A6E3A1]/10 px-2.5 py-1 rounded-full border border-[#A6E3A1]/20">
-                <ShieldCheck size={12} /> Активен
-              </span>
+
+              {showKeyInput && (
+                <div className="pt-2 border-t border-[#212435] flex items-center gap-2">
+                  <input
+                    type="password"
+                    placeholder="Вставьте AI Studio / Gemini API key..."
+                    value={customKey}
+                    onChange={(e) => handleSaveKey(e.target.value)}
+                    className="flex-1 bg-[#161822] border border-[#212435] focus:border-[#89B4FA] text-white text-xs px-3 py-1.5 rounded-xl outline-none font-mono"
+                  />
+                  {customKey && (
+                    <button
+                      onClick={() => handleSaveKey('')}
+                      className="px-2.5 py-1.5 rounded-xl bg-[#212435] hover:bg-[#313244] text-[#F38BA8] text-[11px] font-semibold"
+                    >
+                      Сбросить
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#11111B] border border-[#212435] text-xs">

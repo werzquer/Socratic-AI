@@ -1,7 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
 
-function getAiClient(): GoogleGenAI {
-  const key = process.env.GEMINI_API_KEY;
+function getAiClient(req?: any, body?: any): GoogleGenAI {
+  const key = body?.customApiKey ||
+              req?.headers?.['x-gemini-key'] ||
+              (typeof req?.headers?.authorization === 'string' ? req.headers.authorization.replace('Bearer ', '') : null) ||
+              process.env.GEMINI_API_KEY ||
+              process.env.API_KEY ||
+              process.env.VITE_GEMINI_API_KEY;
   if (!key) {
     throw new Error('GEMINI_API_KEY_MISSING');
   }
@@ -47,7 +52,7 @@ ${codeAfter}
 
 Выведи ТОЛЬКО код, который нужно вставить между ними. Без маркдауна и объяснений.`;
 
-    const client = getAiClient();
+    const client = getAiClient(req, body);
     
     let text = '';
     const modelsToTry = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-1.5-flash"];

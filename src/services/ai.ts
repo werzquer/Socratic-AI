@@ -1,3 +1,18 @@
+function getHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  try {
+    const customKey = localStorage.getItem('socratic_custom_api_key');
+    if (customKey && customKey.trim()) {
+      headers['x-gemini-key'] = customKey.trim();
+    }
+  } catch (e) {
+    // Ignore
+  }
+  return headers;
+}
+
 export function createChatSession(initialAiModel: 'flash' | 'thinking' | 'express' = 'flash') {
   const history: any[] = [];
   let currentAiModel = initialAiModel;
@@ -28,7 +43,7 @@ export function createChatSession(initialAiModel: 'flash' | 'thinking' | 'expres
       try {
         response = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getHeaders(),
           body: JSON.stringify({ 
             history: recentHistory, 
             message: text, 
@@ -45,7 +60,7 @@ export function createChatSession(initialAiModel: 'flash' | 'thinking' | 'expres
       if (!contentType.includes("application/json")) {
         const raw = await response.text().catch(() => "");
         if (response.status === 404 || raw.includes("<!DOCTYPE") || raw.includes("<html")) {
-          throw new Error("API не найден. Убедитесь, что переменная GEMINI_API_KEY добавлена в Environment Variables в Vercel.");
+          throw new Error("Сервер недоступен или эндпоинт API не найден.");
         }
         throw new Error(`Ошибка сервера (${response.status}): ${raw.slice(0, 100)}`);
       }
@@ -69,7 +84,7 @@ export async function runCode(code: string, language: string) {
   try {
     const response = await fetch('/api/run', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ code, language })
     });
     const contentType = response.headers.get("content-type") || "";
@@ -87,7 +102,7 @@ export async function auditCode(code: string, language: string, output: string) 
   try {
     response = await fetch('/api/audit', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ code, language, output })
     });
   } catch (netErr: any) {
@@ -108,7 +123,7 @@ export async function getAutocomplete(codeBefore: string, codeAfter: string, lan
   try {
     const response = await fetch('/api/autocomplete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ codeBefore, codeAfter, language })
     });
     const contentType = response.headers.get("content-type") || "";
