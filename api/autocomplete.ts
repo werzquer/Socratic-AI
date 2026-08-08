@@ -1,4 +1,12 @@
-import { getAiClient } from './_gemini';
+import { GoogleGenAI } from "@google/genai";
+
+function getAiClient(): GoogleGenAI {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error('GEMINI_API_KEY_MISSING');
+  }
+  return new GoogleGenAI({ apiKey: key });
+}
 
 export default async function handler(req: any, res: any) {
   try {
@@ -40,12 +48,22 @@ ${codeAfter}
 Выведи ТОЛЬКО код, который нужно вставить между ними. Без маркдауна и объяснений.`;
 
     const client = getAiClient();
-    const response = await client.models.generateContent({
-      model: "gemini-flash-latest",
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    });
+    
+    let text = '';
+    const modelsToTry = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-1.5-flash"];
+    for (const modelName of modelsToTry) {
+      try {
+        const response = await client.models.generateContent({
+          model: modelName,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        });
+        text = response.text || '';
+        if (text) break;
+      } catch (err) {
+        // Fallback silently
+      }
+    }
 
-    let text = response.text || '';
     text = text.replace(/^\`\`\`[a-z]*\n/gm, '').replace(/\`\`\`$/g, '');
     return res.status(200).json({ text });
   } catch (error: any) {

@@ -224,8 +224,8 @@ export default function SocraticMentor() {
       const res = await runCode(code, language);
       setOutput(res.output);
       
-      // Auto-audit if error
-      if (!res.success) {
+      // Auto-audit only on genuine execution errors
+      if (res.isError) {
         setIsTyping(true);
         try {
           const responseText = await auditCode(code, language, res.output);
@@ -236,9 +236,9 @@ export default function SocraticMentor() {
           }]);
         } catch (auditErr: any) {
           console.error("Auto-audit failed:", auditErr);
-          // Don't show error message for auto-audit to not clutter UI if rate limited
+        } finally {
+          setIsTyping(false);
         }
-        setIsTyping(false);
       }
     } catch (err: any) {
       setOutput(`Error: ${err.message}`);
