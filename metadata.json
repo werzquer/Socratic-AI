@@ -1,0 +1,8 @@
+{
+  "name": "Socratic AI Mentor",
+  "description": "Adaptive educational platform using the Socratic method to teach programming.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
