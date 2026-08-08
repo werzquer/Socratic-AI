@@ -1,10 +1,15 @@
-export function createChatSession() {
+export function createChatSession(initialAiModel: 'flash' | 'thinking' | 'express' = 'flash') {
   const history: any[] = [];
+  let currentAiModel = initialAiModel;
   
   return {
-    sendMessage: async (input: { message: string | any[] }) => {
+    setAiModel: (model: 'flash' | 'thinking' | 'express') => {
+      currentAiModel = model;
+    },
+    sendMessage: async (input: { message: string | any[]; aiModel?: 'flash' | 'thinking' | 'express' }) => {
       let text = '';
       let imageUrl = '';
+      const selectedModel = input.aiModel || currentAiModel;
       
       if (Array.isArray(input.message)) {
         text = input.message.find(p => p.text)?.text || '';
@@ -16,12 +21,20 @@ export function createChatSession() {
         text = input.message as string;
       }
       
+      // Limit history size to last 8 items for maximum speed and lower latency
+      const recentHistory = history.slice(-8);
+
       let response: Response;
       try {
         response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ history, message: text, imageUrl })
+          body: JSON.stringify({ 
+            history: recentHistory, 
+            message: text, 
+            imageUrl, 
+            aiModel: selectedModel 
+          })
         });
       } catch (netErr: any) {
         throw new Error("Не удалось подключиться к серверу. Проверьте интернет-соединение.");
@@ -32,7 +45,7 @@ export function createChatSession() {
       if (!contentType.includes("application/json")) {
         const raw = await response.text().catch(() => "");
         if (response.status === 404 || raw.includes("<!DOCTYPE") || raw.includes("<html")) {
-          throw new Error("API не найден. Убедитесь, что перемнная GEMINI_API_KEY добавлена в Environment Variables в Vercel.");
+          throw new Error("API не найден. Убедитесь, что переменная GEMINI_API_KEY добавлена в Environment Variables в Vercel.");
         }
         throw new Error(`Ошибка сервера (${response.status}): ${raw.slice(0, 100)}`);
       }

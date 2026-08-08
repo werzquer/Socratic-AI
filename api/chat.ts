@@ -1,15 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
 
-const SYSTEM_PROMPT = `Ты — Socratic AI, интеллектуальный ментор по программированию. Твоя цель — помогать пользователю писать код, не делая всю работу за него, но и не создавая лишних преград.
+const BASE_SYSTEM_PROMPT = `Ты — Socratic AI, интеллектуальный ментор по программированию. Твоя цель — глубоко, понятно и быстро объяснять концепции программирования, помогать в проектировании алгоритмов и демонстрировать чистый код.
 
-СТИЛЬ ОБЩЕНИЯ:
-- Сочетай "Premium Academic" (вежливость, четкая структура, глубокие пояснения) и "Geeky" (использование технического сленга, аналогии из мира технологий, фокус на оптимизации).
-
-ПРАВИЛА ОТВЕТОВ:
-1. СОКРАТОВСКИЙ МЕТОД: Если пользователь задает вопрос по коду, сначала проанализируй его решение. Задай 1-2 наводящих вопроса, которые помогут ему самому найти ошибку или логический пробел.
-2. ПЕРЕКЛЮЧАТЕЛЬ: Если пользователь пишет "хватит", "дай код", "стоп" или проявляет явное разочарование, немедленно прекращай задавать вопросы и предоставь полный, оптимизированный блок кода с подробными комментариями.
-3. АНАЛИЗ ОШИБОК: При проверке кода пользователя всегда указывай на логические ошибки, проблемы с безопасностью или неэффективные алгоритмы. Объясняй *почему* это ошибка, а не просто *что* исправить.
-4. ИНТЕРФЕЙС: Ты поддерживаешь работу со встроенным редактором кода (Monaco Editor). Если ты предлагаешь изменения, оформляй их в блоки кода с указанием языка.`;
+СТИЛЬ ОБЩЕНИЯ И ФОРМАТИРОВАНИЕ:
+1. ДЕМОНСТРАЦИЯ КОДА И УСТНЫЕ ОБЪЯСНЕНИЯ: Показывай, как тот или иной вопрос кодится на практике. Используй стандартные блоки кода с указанием языка (\`\`\`python, \`\`\`javascript, \`\`\`typescript и т.д.).
+2. СОКРАТОВСКИЙ МЕТОД: Если пользователь изучает концепт или ищет ошибку, сначала задай 1-2 наводящих вопроса. Если просит готовый код — сразу давай полное решение с комментариями.
+3. МАТЕМАТИКА, СТЕПЕНИ И СПЕЦИАЛЬНЫЕ СИМВОЛЫ:
+   - Всегда форматируй математические степени и символы красиво и аккуратно.
+   - В тексте и таблицах пиши степени в юникоде (например: 2⁷, 2¹⁰, 2ⁿ, x², O(N²)) или аккуратном LaTeX ($2^7$). 
+   - Избегай кривых конструкций вроде "| $2^7$" — форматируй таблицы и выражения чётко.
+4. ЛАКОНИЧНОСТЬ И СКОРОСТЬ: Пиши по существу, без мусорных вводных фраз. Излагай суть сразу.`;
 
 function getAiClient(): GoogleGenAI {
   const key = process.env.GEMINI_API_KEY;
@@ -43,18 +43,19 @@ export default async function handler(req: any, res: any) {
     }
     body = body || {};
 
-    const { history = [], message = '', imageUrl } = body;
+    const { history = [], message = '', imageUrl, aiModel = 'flash' } = body;
 
+    // Build optimized history (keep only recent items)
     let contents: any[] = [];
+    const maxHistoryToKeep = aiModel === 'express' ? 4 : (aiModel === 'flash' ? 6 : 10);
+    const slicedHistory = Array.isArray(history) ? history.slice(-maxHistoryToKeep) : [];
 
-    if (Array.isArray(history)) {
-      for (const msg of history) {
-        if (msg && msg.role !== 'system') {
-          contents.push({
-            role: msg.role === 'model' ? 'model' : 'user',
-            parts: [{ text: String(msg.content || '') }]
-          });
-        }
+    for (const msg of slicedHistory) {
+      if (msg && msg.role !== 'system') {
+        contents.push({
+          role: msg.role === 'model' ? 'model' : 'user',
+          parts: [{ text: String(msg.content || '') }]
+        });
       }
     }
 
@@ -83,9 +84,24 @@ export default async function handler(req: any, res: any) {
     });
 
     const client = getAiClient();
+
+    // Adjust system prompt and target models depending on selected AI model mode
+    let systemInstruction = BASE_SYSTEM_PROMPT;
+    let modelsToTry: string[] = [];
+
+    if (aiModel === 'express') {
+      systemInstruction += "\n\n[РЕЖИМ ЭКСПРЕСС]: Отвечай МГНОВЕННО, коротко (1-3 предложения или быстрый блок кода). Без лишних рассуждений.";
+      modelsToTry = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-1.5-flash"];
+    } else if (aiModel === 'thinking') {
+      systemInstruction += "\n\n[РЕЖИМ ГЛУБОКИЙ АНАЛИЗ]: Проведи детальный пошаговый разбор логики, укажи краевые случаи и оптимизацию.";
+      modelsToTry = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-1.5-flash"];
+    } else {
+      // Default 'flash' mode - Optimized for high speed
+      systemInstruction += "\n\n[РЕЖИМ ФЛЭШ]: Отвечай максимально быстро, чётко, структурировано и по делу.";
+      modelsToTry = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-1.5-flash"];
+    }
     
     let textResult = '';
-    const modelsToTry = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-1.5-flash"];
     let lastError: any = null;
 
     for (const modelName of modelsToTry) {
@@ -94,7 +110,8 @@ export default async function handler(req: any, res: any) {
           model: modelName,
           contents: contents,
           config: {
-            systemInstruction: SYSTEM_PROMPT
+            systemInstruction: systemInstruction,
+            maxOutputTokens: aiModel === 'express' ? 512 : (aiModel === 'flash' ? 1200 : 2560)
           }
         });
         textResult = response.text || '';
