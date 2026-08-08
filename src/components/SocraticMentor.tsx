@@ -91,8 +91,9 @@ export default function SocraticMentor() {
             }
             return { items: [] };
           },
-          freeInlineCompletions: () => {}
-        }
+          freeInlineCompletions: () => {},
+          disposeInlineCompletions: () => {}
+        } as any
       );
       return () => provider.dispose();
     }
