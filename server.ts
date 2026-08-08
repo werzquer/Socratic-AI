@@ -69,7 +69,7 @@ async function startServer() {
       });
 
       const response = await getAiClient().models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-flash-latest",
         contents: contents,
         config: {
           systemInstruction: SYSTEM_PROMPT
@@ -79,10 +79,10 @@ async function startServer() {
       res.json({ text: response.text });
     } catch (error: any) {
       console.error("Gemini API Error:", error);
-      if (error.message?.includes("429") || error.message?.includes("quota") || error.status === "RESOURCE_EXHAUSTED") {
-        return res.status(429).json({ error: "Превышена квота запросов. Пожалуйста, подождите минуту." });
+      if (error.message?.includes("429") || error.message?.includes("quota") || error.status === "RESOURCE_EXHAUSTED" || error.code === 429) {
+        return res.status(429).json({ error: "Превышена квота запросов (Rate Limit). Пожалуйста, подождите 30-60 секунд и повторите попытку." });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message || "Ошибка сервера при вызове Gemini API" });
     }
   });
 
@@ -147,7 +147,7 @@ async function startServer() {
       const prompt = `Пользователь пытается запустить код на ${language}:\n\n\`\`\`${language}\n${code}\n\`\`\`\n\nРезультат выполнения / Ошибка:\n${output}\n\nСделай аудит этого кода. Найди ошибку и задай 1-2 наводящих вопроса по методу Сократа.`;
 
       const response = await getAiClient().models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-flash-latest",
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: {
           systemInstruction: SYSTEM_PROMPT
@@ -156,10 +156,10 @@ async function startServer() {
       
       res.json({ text: response.text });
     } catch (error: any) {
-      if (error.message?.includes("429") || error.message?.includes("quota") || error.status === "RESOURCE_EXHAUSTED") {
-        return res.status(429).json({ error: "Превышена квота запросов. Пожалуйста, подождите минуту." });
+      if (error.message?.includes("429") || error.message?.includes("quota") || error.status === "RESOURCE_EXHAUSTED" || error.code === 429) {
+        return res.status(429).json({ error: "Превышена квота запросов (Rate Limit). Пожалуйста, подождите 30-60 секунд и повторите попытку." });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message || "Ошибка сервера при вызове Gemini API" });
     }
   });
 
@@ -181,7 +181,7 @@ ${codeAfter}
 Выведи ТОЛЬКО код, который нужно вставить между ними. Без маркдауна и объяснений.`;
 
       const response = await getAiClient().models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-flash-latest",
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
       });
       
@@ -190,10 +190,10 @@ ${codeAfter}
       text = text.replace(/^\`\`\`[a-z]*\n/gm, '').replace(/\`\`\`$/g, '');
       res.json({ text });
     } catch (error: any) {
-      if (error.message?.includes("429") || error.message?.includes("quota") || error.status === "RESOURCE_EXHAUSTED") {
+      if (error.message?.includes("429") || error.message?.includes("quota") || error.status === "RESOURCE_EXHAUSTED" || error.code === 429) {
         return res.status(429).json({ error: "Rate limit reached" });
       }
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message || "Autocomplete error" });
     }
   });
 

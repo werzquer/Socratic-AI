@@ -175,10 +175,11 @@ export default function SocraticMentor() {
       };
       setMessages(prev => [...prev, responseMessage]);
     } catch (error: any) {
-      console.error(error);
-      const errorMessage = error.message?.includes("429") || error.message?.includes("квота")
-        ? "⚠️ **Превышена квота запросов.** Режим бесплатного Gemini API ограничен 5 запросами в минуту. Пожалуйста, подождите 30-60 секунд и попробуйте снова."
-        : "*Ошибка!* Произошел сбой при генерации ответа. Проверьте API ключ или попробуйте позже.";
+      console.error("Chat error:", error);
+      const isQuotaError = error.message?.includes("429") || error.message?.includes("квота") || error.message?.includes("quota") || error.message?.includes("Rate");
+      const errorMessage = isQuotaError
+        ? "⚠️ **Превышена квота запросов (Rate Limit).** Пожалуйста, подождите 30–60 секунд и повторите попытку."
+        : `⚠️ **Ошибка при получении ответа:** ${error.message || "Не удалось получить ответ от Сократа. Проверьте подключение к сети или API ключ."}`;
         
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
