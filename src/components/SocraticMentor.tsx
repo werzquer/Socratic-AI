@@ -8,14 +8,12 @@ import {
   Send, Lightbulb, AlertCircle, RefreshCw, Paperclip, X, 
   Sparkles, MessageSquare, Plus, Trash2, Download, BookOpen, 
   HelpCircle, Code2, Cpu, Compass, Menu, ChevronLeft, Key, Check,
-  Zap, Brain, Gauge, Rocket, ArrowRight
+  Zap, Brain, Gauge, Rocket, ArrowRight, Home, Sliders
 } from 'lucide-react';
 import { createChatSession } from '../services/ai';
 import { CodeBlock } from './CodeBlock';
 import { formatMathAndSuperscripts } from '../utils/formatMath';
-
-type SocraticMode = 'socratic' | 'verbal' | 'code';
-type AiModelType = 'flash' | 'thinking' | 'express';
+import { AiModelType, SocraticMode } from './SettingsModal';
 
 type Message = {
   id: string;
@@ -33,6 +31,16 @@ type Session = {
   messages: Message[];
   mode: SocraticMode;
 };
+
+interface SocraticMentorProps {
+  onGoHome: () => void;
+  onOpenSettings: () => void;
+  aiModel: AiModelType;
+  setAiModel: (model: AiModelType) => void;
+  mode: SocraticMode;
+  setMode: (mode: SocraticMode) => void;
+  initialPrompt?: string;
+}
 
 const MODE_LABELS: Record<SocraticMode, { title: string; desc: string; icon: any }> = {
   socratic: {
@@ -121,7 +129,15 @@ const TOPIC_STARTERS = [
   }
 ];
 
-export default function SocraticMentor() {
+export default function SocraticMentor({
+  onGoHome,
+  onOpenSettings,
+  aiModel,
+  setAiModel,
+  mode,
+  setMode,
+  initialPrompt
+}: SocraticMentorProps) {
   const [sessions, setSessions] = useState<Session[]>(() => {
     try {
       const saved = localStorage.getItem('socratic_sessions');
@@ -139,8 +155,6 @@ export default function SocraticMentor() {
   });
 
   const [activeSessionId, setActiveSessionId] = useState<string>('default');
-  const [mode, setMode] = useState<SocraticMode>('socratic');
-  const [aiModel, setAiModel] = useState<AiModelType>('flash');
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -182,6 +196,15 @@ export default function SocraticMentor() {
       chatRef.current.setAiModel(aiModel);
     }
   }, [aiModel]);
+
+  // Auto-run initial prompt if passed from HomeScreen
+  const initialPromptSent = useRef(false);
+  useEffect(() => {
+    if (initialPrompt && !initialPromptSent.current) {
+      initialPromptSent.current = true;
+      handleSendMessage(initialPrompt);
+    }
+  }, [initialPrompt]);
 
   // Scroll to bottom on message
   useEffect(() => {
@@ -377,7 +400,7 @@ export default function SocraticMentor() {
       >
         {/* Sidebar Header */}
         <div className="p-4 border-b border-[#212435] flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={onGoHome}>
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#89B4FA] to-[#CBA6F7] text-[#0D0E15] font-black flex items-center justify-center text-lg shadow-md shadow-[#89B4FA]/20">
               ∑
             </div>
@@ -398,14 +421,24 @@ export default function SocraticMentor() {
           </button>
         </div>
 
-        {/* New Chat Button */}
-        <div className="p-3">
+        {/* Action Buttons: Home & New Chat */}
+        <div className="p-3 grid grid-cols-2 gap-2">
+          <button
+            onClick={onGoHome}
+            className="flex items-center justify-center gap-1.5 bg-[#212435] hover:bg-[#313244] text-[#CDD6F4] font-semibold py-2.5 px-3 rounded-xl transition-all border border-[#313244]"
+            title="На главную"
+          >
+            <Home size={16} />
+            <span className="text-xs">Главная</span>
+          </button>
+
           <button
             onClick={handleCreateNewSession}
-            className="w-full flex items-center justify-center gap-2 bg-[#89B4FA] hover:bg-[#B4BEFE] text-[#0D0E15] font-semibold py-2.5 px-4 rounded-xl transition-all shadow-md shadow-[#89B4FA]/10 active:scale-[0.98]"
+            className="flex items-center justify-center gap-1.5 bg-[#89B4FA] hover:bg-[#B4BEFE] text-[#0D0E15] font-semibold py-2.5 px-3 rounded-xl transition-all shadow-md shadow-[#89B4FA]/10 active:scale-[0.98]"
+            title="Новый диалог"
           >
-            <Plus size={18} />
-            <span>Новый диалог</span>
+            <Plus size={16} />
+            <span className="text-xs">Новый чат</span>
           </button>
         </div>
 
@@ -544,23 +577,30 @@ export default function SocraticMentor() {
 
         </div>
 
-        {/* Sidebar Footer */}
-        <div className="p-3 border-t border-[#212435] flex items-center justify-between text-xs text-[#A6ADC8]">
-          <button
-            onClick={() => setShowApiKeyGuide(prev => !prev)}
-            className="flex items-center gap-1.5 hover:text-[#89B4FA] transition-colors"
-          >
-            <Key size={14} />
-            <span>GEMINI_API_KEY</span>
-          </button>
-          
-          <button
-            onClick={handleClearCurrentChat}
-            className="hover:text-[#F38BA8] transition-colors"
-            title="Очистить сообщения текущего чата"
-          >
-            Очистить
-          </button>
+        {/* Sidebar Footer with credit */}
+        <div className="p-3 border-t border-[#212435] flex flex-col gap-2 text-xs text-[#A6ADC8]">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={onOpenSettings}
+              className="flex items-center gap-1.5 hover:text-[#89B4FA] transition-colors"
+            >
+              <Sliders size={14} />
+              <span>Настройки</span>
+            </button>
+            
+            <button
+              onClick={handleClearCurrentChat}
+              className="hover:text-[#F38BA8] transition-colors"
+              title="Очистить сообщения текущего чата"
+            >
+              Очистить
+            </button>
+          </div>
+
+          {/* Small credit text */}
+          <div className="text-[10px] font-mono text-[#6C7086] text-center pt-1 border-t border-[#212435]/50">
+            designed by Daniyar
+          </div>
         </div>
       </aside>
 
@@ -579,9 +619,18 @@ export default function SocraticMentor() {
                 <Menu size={20} />
               </button>
             )}
+
+            <button
+              onClick={onGoHome}
+              className="flex items-center gap-1.5 text-xs bg-[#212435] hover:bg-[#313244] text-[#CDD6F4] px-3 py-1.5 rounded-xl transition-all border border-[#313244]"
+              title="На главную страницу"
+            >
+              <Home size={14} />
+              <span className="hidden sm:inline">На главную</span>
+            </button>
             
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-white truncate max-w-[160px] sm:max-w-xs">
+              <span className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-xs">
                 {activeSession.title}
               </span>
               <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#212435] text-[#89B4FA] border border-[#313244]">
@@ -590,7 +639,7 @@ export default function SocraticMentor() {
             </div>
           </div>
 
-          {/* Model Switcher Toolbar in Navbar */}
+          {/* Model Switcher Toolbar & Settings */}
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-1 bg-[#11111B] p-1 rounded-xl border border-[#212435]">
               {(Object.keys(AI_MODEL_CONFIGS) as AiModelType[]).map((mKey) => {
@@ -613,6 +662,14 @@ export default function SocraticMentor() {
                 );
               })}
             </div>
+
+            <button
+              onClick={onOpenSettings}
+              className="p-2 text-[#CDD6F4] hover:bg-[#212435] rounded-xl transition-colors border border-[#212435]"
+              title="Открыть настройки"
+            >
+              <Sliders size={16} />
+            </button>
 
             <button
               onClick={exportChatAsMarkdown}
@@ -754,7 +811,6 @@ export default function SocraticMentor() {
           {/* Messages Stream */}
           {messages.map((msg) => {
             const isUser = msg.role === 'user';
-            // Pre-process math exponents and special characters for clean rendering
             const formattedContent = isUser ? msg.content : formatMathAndSuperscripts(msg.content);
 
             return (
@@ -873,7 +929,7 @@ export default function SocraticMentor() {
             {/* Quick Model Selector Pills directly above input */}
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-[#A6ADC8] text-[11px] font-medium hidden sm:inline">Скорость ответа:</span>
+                <span className="text-[#A6ADC8] text-[11px] font-medium hidden sm:inline">Скорость:</span>
                 <div className="flex items-center gap-1 bg-[#0D0E15] p-1 rounded-xl border border-[#212435]">
                   {(Object.keys(AI_MODEL_CONFIGS) as AiModelType[]).map((mKey) => {
                     const cfg = AI_MODEL_CONFIGS[mKey];
@@ -898,7 +954,8 @@ export default function SocraticMentor() {
                 </div>
               </div>
 
-              <div className="text-[11px] font-mono text-[#A6ADC8] flex items-center gap-1">
+              <div className="text-[11px] font-mono text-[#A6ADC8] flex items-center gap-2">
+                <span className="hidden sm:inline text-[#6C7086]">designed by daniyar</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#A6E3A1]"></span>
                 <span>{activeModelInfo.speed}</span>
               </div>
@@ -969,7 +1026,7 @@ export default function SocraticMentor() {
 
             <div className="flex justify-between items-center px-2 text-[11px] text-[#6C7086]">
               <span>Shift + Enter для переноса строки</span>
-              <span className="hidden sm:inline">Сократик ИИ v2.5 • {activeModelInfo.name}</span>
+              <span className="hidden sm:inline">designed by Daniyar</span>
             </div>
 
           </div>
