@@ -38,7 +38,7 @@ export default function Dashboard() {
       <nav className="border-b border-[#313244] bg-[#181825] px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="bg-[#89B4FA] text-[#11111B] p-1.5 rounded-md font-bold text-sm">∑</div>
-          <span className="font-bold text-lg">Сократик ИИ</span>
+          <span className="font-bold text-lg text-white">Сократ</span>
         </div>
         
         <div className="flex items-center gap-4">

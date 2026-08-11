@@ -19,7 +19,7 @@ interface AiChatStore {
 
 export const useAiChatStore = create<AiChatStore>((set, get) => ({
   messages: [
-    { id: '1', role: 'ai', text: 'Привет! Я Сократик, твой ИИ-помощник. Чем могу помочь с кодом сегодня?' }
+    { id: '1', role: 'ai', text: 'Привет! Я Сократ, твой ИИ-помощник. Чем могу помочь с кодом сегодня?' }
   ],
   isLoading: false,
   sendMode: 'full-file',
@@ -60,6 +60,6 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   },
   
   clearChat: () => set({ 
-    messages: [{ id: '1', role: 'ai', text: 'Привет! Я Сократик, твой ИИ-помощник. Чем могу помочь с кодом сегодня?' }] 
+    messages: [{ id: '1', role: 'ai', text: 'Привет! Я Сократ, твой ИИ-помощник. Чем могу помочь с кодом сегодня?' }] 
   })
 }));

@@ -63,7 +63,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <Sliders size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Настройки Сократика</h2>
+              <h2 className="text-lg font-bold text-white">Настройки Сократа</h2>
               <p className="text-xs text-[#A6ADC8]">Персонализация скорости, режимов и параметров ИИ</p>
             </div>
           </div>

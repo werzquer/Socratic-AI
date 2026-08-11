@@ -8,12 +8,13 @@ import {
   Send, Lightbulb, AlertCircle, RefreshCw, Paperclip, X, 
   Sparkles, MessageSquare, Plus, Trash2, Download, BookOpen, 
   HelpCircle, Code2, Cpu, Compass, Menu, ChevronLeft, Key, Check,
-  Zap, Brain, Gauge, Rocket, ArrowRight, Home, Sliders
+  Zap, Brain, Gauge, Rocket, ArrowRight, Home, Sliders, Quote
 } from 'lucide-react';
 import { createChatSession } from '../services/ai';
 import { CodeBlock } from './CodeBlock';
 import { formatMathAndSuperscripts } from '../utils/formatMath';
 import { AiModelType, SocraticMode } from './SettingsModal';
+import { SOCRATIC_QUOTES } from '../data/socraticQuotes';
 
 type Message = {
   id: string;
@@ -104,6 +105,15 @@ const AI_MODEL_CONFIGS: Record<AiModelType, {
 
 const TOPIC_STARTERS = [
   {
+    category: '🏛️ Мысли & Высказывания Сократа',
+    topics: [
+      { title: '«Я знаю, что ничего не знаю»', prompt: 'Сократ, объясни глубокий смысл своего известного высказывания: «Я знаю только то, что ничего не знаю». Как этот принцип помогает в обучении и в жизни?' },
+      { title: '«Неосмысленная жизнь...»', prompt: 'Сократ, расскажи, что ты имел в виду под фразой «Неосмысленная жизнь не стоит того, чтобы жить»? Как применять этот принцип каждый день?' },
+      { title: '«Познай самого себя»', prompt: 'Сократ, в чём заключается глубина призыва «Познай самого себя» и почему с этого начинается любая мудрость?' },
+      { title: '«Заговори, чтобы я тебя увидел»', prompt: 'Сократ, что означает твоё выражение «Заговори, чтобы я тебя увидел»?' }
+    ]
+  },
+  {
     category: '🧠 Концепты и Алгоритмы',
     topics: [
       { title: 'Как устроена рекурсия?', prompt: 'Объясни мне, как работает рекурсия и стек вызовов. В чем разница с обычным циклом?' },
@@ -120,7 +130,7 @@ const TOPIC_STARTERS = [
     ]
   },
   {
-    category: '🏛 Архитектура и ООП',
+    category: '🏗 Архитектура и ООП',
     topics: [
       { title: 'Принципы SOLID', prompt: 'Объясни 5 принципов SOLID на простых жизненных примерах из разработки.' },
       { title: 'Паттерн Наблюдатель (Observer)', prompt: 'Зачем нужен паттерн Observer (Наблюдатель) и как его закодить?' },
@@ -161,6 +171,7 @@ export default function SocraticMentor({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [showApiKeyGuide, setShowApiKeyGuide] = useState(false);
+  const [showQuotesModal, setShowQuotesModal] = useState(false);
 
   const chatRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -391,7 +402,7 @@ async function executeCleanTask<T>(data: T): Promise<{ ok: boolean }> {
   const exportChatAsMarkdown = () => {
     if (messages.length === 0) return;
     const content = messages.map(m => {
-      const sender = m.role === 'user' ? 'Пользователь' : 'Сократик ИИ';
+      const sender = m.role === 'user' ? 'Пользователь' : 'Сократ';
       return `### ${sender} (${m.timestamp || ''})\n\n${m.content}\n\n---`;
     }).join('\n\n');
 
@@ -423,7 +434,7 @@ async function executeCleanTask<T>(data: T): Promise<{ ok: boolean }> {
               ∑
             </div>
             <div>
-              <h1 className="font-bold text-base text-white tracking-tight">Сократик ИИ</h1>
+              <h1 className="font-bold text-base text-white tracking-tight">Сократ</h1>
               <div className="flex items-center gap-1.5 text-xs text-[#A6ADC8]">
                 <span className="w-2 h-2 rounded-full bg-[#A6E3A1] animate-pulse"></span>
                 <span>Онлайн-ментор</span>
@@ -595,30 +606,23 @@ async function executeCleanTask<T>(data: T): Promise<{ ok: boolean }> {
 
         </div>
 
-        {/* Sidebar Footer with credit */}
-        <div className="p-3 border-t border-[#212435] flex flex-col gap-2 text-xs text-[#A6ADC8]">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={onOpenSettings}
-              className="flex items-center gap-1.5 hover:text-[#89B4FA] transition-colors"
-            >
-              <Sliders size={14} />
-              <span>Настройки</span>
-            </button>
-            
-            <button
-              onClick={handleClearCurrentChat}
-              className="hover:text-[#F38BA8] transition-colors"
-              title="Очистить сообщения текущего чата"
-            >
-              Очистить
-            </button>
-          </div>
-
-          {/* Small credit text */}
-          <div className="text-[10px] font-mono text-[#6C7086] text-center pt-1 border-t border-[#212435]/50">
-            designed by Daniyar
-          </div>
+        {/* Sidebar Footer */}
+        <div className="p-3 border-t border-[#212435] flex items-center justify-between text-xs text-[#A6ADC8]">
+          <button
+            onClick={onOpenSettings}
+            className="flex items-center gap-1.5 hover:text-[#89B4FA] transition-colors"
+          >
+            <Sliders size={14} />
+            <span>Настройки</span>
+          </button>
+          
+          <button
+            onClick={handleClearCurrentChat}
+            className="hover:text-[#F38BA8] transition-colors"
+            title="Очистить сообщения текущего чата"
+          >
+            Очистить
+          </button>
         </div>
       </aside>
 
@@ -939,7 +943,6 @@ async function executeCleanTask<T>(data: T): Promise<{ ok: boolean }> {
               </div>
 
               <div className="text-[11px] font-mono text-[#A6ADC8] flex items-center gap-2">
-                <span className="hidden sm:inline text-[#6C7086]">designed by daniyar</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#A6E3A1]"></span>
                 <span>{activeModelInfo.speed}</span>
               </div>
@@ -982,6 +985,16 @@ async function executeCleanTask<T>(data: T): Promise<{ ok: boolean }> {
                 <Paperclip size={18} />
               </button>
 
+              <button
+                type="button"
+                onClick={() => setShowQuotesModal(true)}
+                className="p-2 text-[#CBA6F7] hover:text-[#F9E2AF] hover:bg-[#212435] rounded-xl transition-colors shrink-0 flex items-center gap-1 text-xs font-semibold"
+                title="Философские мысли и цитаты Сократа"
+              >
+                <Quote size={18} />
+                <span className="hidden sm:inline">Мысли Сократа</span>
+              </button>
+
               <textarea
                 ref={textareaRef}
                 value={inputValue}
@@ -992,7 +1005,7 @@ async function executeCleanTask<T>(data: T): Promise<{ ok: boolean }> {
                     handleSendMessage();
                   }
                 }}
-                placeholder="Спроси Сократа о коде, алгоритмах или математике... (Enter для отправки)"
+                placeholder="Спроси Сократа или выбери мысль из цитат... (Enter для отправки)"
                 rows={1}
                 className="flex-1 bg-transparent text-sm text-[#CDD6F4] placeholder-[#6C7086] focus:outline-none resize-none py-1.5 max-h-40 custom-scrollbar"
               />
@@ -1017,6 +1030,57 @@ async function executeCleanTask<T>(data: T): Promise<{ ok: boolean }> {
         </div>
 
       </main>
+
+      {/* Socratic Quotes Modal */}
+      {showQuotesModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#161822] border border-[#212435] rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#212435] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-[#CBA6F7]/10 text-[#CBA6F7] border border-[#CBA6F7]/20">
+                  <Quote size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">Известные высказывания Сократа</h3>
+                  <p className="text-xs text-[#A6ADC8]">Выберите философскую мысль для подробного разбора и разговора</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowQuotesModal(false)}
+                className="p-2 hover:bg-[#212435] rounded-xl text-[#A6ADC8] hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-3 pr-1 custom-scrollbar flex-1">
+              {SOCRATIC_QUOTES.map((q) => (
+                <div 
+                  key={q.id}
+                  className="p-4 rounded-xl bg-[#0D0E15] border border-[#212435] hover:border-[#CBA6F7]/50 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
+                >
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#CBA6F7]">{q.category}</span>
+                    <p className="text-sm font-semibold text-white italic">«{q.quote}»</p>
+                    <p className="text-xs text-[#A6ADC8]">{q.explanation}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowQuotesModal(false);
+                      handleSendMessage(q.prompt);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-[#CBA6F7] hover:bg-[#b58ee8] text-[#0D0E15] font-extrabold text-xs transition-all shrink-0 flex items-center gap-1.5 shadow-md shadow-[#CBA6F7]/20 self-end sm:self-auto hover:scale-105 active:scale-95"
+                  >
+                    <span>Обсудить смысл</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

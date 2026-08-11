@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   MessageSquare, Sliders, Sparkles, Zap, Brain, Rocket, 
-  ArrowRight, Cpu, Flame, Layers
+  ArrowRight, Cpu, Flame, Layers, BookOpen, Quote
 } from 'lucide-react';
 import { AiModelType, SocraticMode } from './SettingsModal';
+import { SOCRATIC_QUOTES } from '../data/socraticQuotes';
 
 interface HomeScreenProps {
   onStartChat: (prompt?: string) => void;
@@ -20,10 +21,10 @@ const AI_MODELS: { id: AiModelType; name: string; speed: string; icon: any; colo
 ];
 
 const QUICK_PROMPTS = [
-  { prompt: "Как устроена рекурсия и стек вызовов?", tag: "Алгоритмы", icon: Sparkles },
-  { prompt: "Сколько операций выполняет O(2ⁿ)? Объясни степени.", tag: "Математика & Big O", icon: Cpu },
-  { prompt: "Как работает Event Loop под капотом в JavaScript?", tag: "Асинхронность", icon: Flame },
-  { prompt: "Принципы SOLID простыми словами и с примерами.", tag: "Архитектура", icon: Layers }
+  { prompt: "Разбери отступы, типы данных и поток выполнения в моём Python коде", tag: "Python", icon: Sparkles },
+  { prompt: "Как мыслить классами и объектами в Java при проектировании?", tag: "Java", icon: Layers },
+  { prompt: "Как правильно выстроить смысловой каркас страницы на HTML?", tag: "HTML", icon: Cpu },
+  { prompt: "Почему CSS элементы 'толкают' и 'перекрывают' друг друга на странице?", tag: "CSS", icon: Flame }
 ];
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -32,6 +33,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   aiModel,
   setAiModel
 }) => {
+  const [activeTab, setActiveTab] = useState<'tech' | 'philosophy'>('tech');
+
   return (
     <div className="min-h-screen bg-[#0D0E15] text-[#CDD6F4] font-sans flex flex-col justify-between selection:bg-[#89B4FA]/30 selection:text-white">
       
@@ -47,8 +50,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             ∑
           </div>
           <div>
-            <span className="font-bold text-base text-white tracking-tight block leading-tight">Socratic AI</span>
-            <span className="text-[10px] text-[#A6ADC8] font-mono">v2.5 • Gemini Powered</span>
+            <span className="font-bold text-base text-white tracking-tight block leading-tight">Socratic AI mentor</span>
+            <span className="text-[10px] text-[#A6ADC8] font-mono">v2.5 • Ментор & Философ</span>
           </div>
         </div>
 
@@ -62,24 +65,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </header>
 
       {/* Main Hero Container */}
-      <main className="relative z-10 flex-1 w-full max-w-3xl mx-auto px-6 py-12 flex flex-col justify-center items-center text-center space-y-8">
+      <main className="relative z-10 flex-1 w-full max-w-3xl mx-auto px-6 py-8 sm:py-12 flex flex-col justify-center items-center text-center space-y-8">
         
         {/* Main Logo & Headline */}
         <div className="space-y-3 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#161822] border border-[#212435] text-xs font-medium text-[#89B4FA]">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#161822] border border-[#212435] text-xs font-medium text-[#89B4FA]">
             <Sparkles size={13} className="text-[#F9E2AF]" />
-            <span>Сократовский ИИ-ментор по программированию</span>
+            <span>Сократовский ИИ-ментор по программированию и философии</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
             Задавай вопросы. <br />
             <span className="bg-gradient-to-r from-[#89B4FA] via-[#CBA6F7] to-[#F9E2AF] bg-clip-text text-transparent">
-              Развивай код мышлением.
+              Развивай код и мышление.
             </span>
           </h1>
 
           <p className="text-sm sm:text-base text-[#A6ADC8] leading-relaxed max-w-xl mx-auto">
-            Наводящие вопросы, чистые примеры кода и быстрая обратная связь без задержек.
+            Живой диалог, наводящие вопросы Сократа, чистые примеры кода и философские мысли древности.
           </p>
         </div>
 
@@ -113,34 +116,88 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[#89B4FA] to-[#B4BEFE] hover:from-[#B4BEFE] hover:to-[#89B4FA] text-[#0D0E15] font-extrabold text-base py-3.5 px-6 rounded-2xl transition-all shadow-xl shadow-[#89B4FA]/20 hover:scale-[1.02] active:scale-[0.98]"
           >
             <MessageSquare size={18} />
-            <span>Начать чат с Сократом</span>
+            <span>Начать диалог с Сократом</span>
             <ArrowRight size={16} />
           </button>
         </div>
 
-        {/* Quick Start Questions */}
-        <div className="w-full space-y-2.5 pt-6 text-left">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-[#A6ADC8] px-1">
-            Быстрый старт
+        {/* Section Tabs Switcher (IT vs Philosophy) */}
+        <div className="w-full pt-4 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#212435] pb-2 px-1">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab('tech')}
+                className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider pb-1 transition-all border-b-2 ${
+                  activeTab === 'tech'
+                    ? 'text-[#89B4FA] border-[#89B4FA]'
+                    : 'text-[#A6ADC8] border-transparent hover:text-white'
+                }`}
+              >
+                <Cpu size={14} />
+                <span>Код & Алгоритмы</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('philosophy')}
+                className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider pb-1 transition-all border-b-2 ${
+                  activeTab === 'philosophy'
+                    ? 'text-[#CBA6F7] border-[#CBA6F7]'
+                    : 'text-[#A6ADC8] border-transparent hover:text-white'
+                }`}
+              >
+                <Quote size={14} />
+                <span>Философия Сократа</span>
+              </button>
+            </div>
+            <span className="text-[10px] text-[#6C7086]">Выберите тему</span>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-2">
-            {QUICK_PROMPTS.map((q, idx) => (
-              <button
-                key={idx}
-                onClick={() => onStartChat(q.prompt)}
-                className="p-3 rounded-xl bg-[#161822] border border-[#212435] hover:border-[#89B4FA]/50 hover:bg-[#1A1D2B] transition-all flex items-center justify-between group text-left"
-              >
-                <div className="truncate pr-2">
-                  <span className="text-[10px] font-bold text-[#89B4FA] uppercase tracking-wider block">{q.tag}</span>
-                  <span className="text-xs text-[#CDD6F4] group-hover:text-white transition-colors truncate block">{q.prompt}</span>
-                </div>
-                <div className="p-1 rounded-lg bg-[#212435] group-hover:bg-[#89B4FA] group-hover:text-[#0D0E15] text-[#A6ADC8] transition-all shrink-0">
-                  <ArrowRight size={13} />
-                </div>
-              </button>
-            ))}
-          </div>
+          {/* Tab 1: Tech Prompts */}
+          {activeTab === 'tech' && (
+            <div className="grid sm:grid-cols-2 gap-2.5 text-left animate-fade-in">
+              {QUICK_PROMPTS.map((q, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onStartChat(q.prompt)}
+                  className="p-3.5 rounded-xl bg-[#161822] border border-[#212435] hover:border-[#89B4FA]/50 hover:bg-[#1A1D2B] transition-all flex items-center justify-between group text-left"
+                >
+                  <div className="truncate pr-2">
+                    <span className="text-[10px] font-bold text-[#89B4FA] uppercase tracking-wider block">{q.tag}</span>
+                    <span className="text-xs text-[#CDD6F4] group-hover:text-white transition-colors truncate block">{q.prompt}</span>
+                  </div>
+                  <div className="p-1.5 rounded-lg bg-[#212435] group-hover:bg-[#89B4FA] group-hover:text-[#0D0E15] text-[#A6ADC8] transition-all shrink-0">
+                    <ArrowRight size={13} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Tab 2: Socratic Philosophical Quotes */}
+          {activeTab === 'philosophy' && (
+            <div className="grid sm:grid-cols-2 gap-2.5 text-left animate-fade-in">
+              {SOCRATIC_QUOTES.slice(0, 6).map((q) => (
+                <button
+                  key={q.id}
+                  onClick={() => onStartChat(q.prompt)}
+                  className="p-3.5 rounded-xl bg-[#161822] border border-[#212435] hover:border-[#CBA6F7]/50 hover:bg-[#1A1D2B] transition-all flex flex-col justify-between group text-left space-y-2"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-[#CBA6F7] uppercase tracking-wider">{q.category}</span>
+                      <BookOpen size={12} className="text-[#A6ADC8] group-hover:text-[#CBA6F7] transition-colors" />
+                    </div>
+                    <p className="text-xs font-semibold text-white group-hover:text-[#F9E2AF] transition-colors italic leading-snug">
+                      «{q.quote}»
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-[#212435]/50 text-[10px] text-[#A6ADC8]">
+                    <span className="truncate pr-2">{q.explanation}</span>
+                    <span className="text-[#CBA6F7] font-bold group-hover:translate-x-0.5 transition-transform shrink-0">Обсудить →</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
       </main>
@@ -159,3 +216,4 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     </div>
   );
 };
+
